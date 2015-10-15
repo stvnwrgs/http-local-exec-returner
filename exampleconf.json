@@ -1,0 +1,13 @@
+{
+  "BindAddress": "0.0.0.0:2350",
+  "Commands": [
+    {
+      "Path": "/",
+      "Command": "echo \"hello\""
+    },
+    {
+      "Path": "/welt",
+      "Command": "echo \"Hello world\" | grep 'world'"
+    }
+  ]
+}
