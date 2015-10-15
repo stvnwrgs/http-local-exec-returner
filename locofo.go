@@ -7,18 +7,25 @@ import (
 	"os"
 )
 
-func exec(command string) func(w http.ResponseWriter, r *http.Request) {
+func handler(command Command) func(w http.ResponseWriter, r *http.Request) {
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "Hello world!"+command)
+		out, err := Execute(command.Command, command.Args)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		io.WriteString(w, string(out[:]))
 	}
 }
 
+// Serve runs the Webserver
 func Serve(config Config) {
 	mux := http.NewServeMux()
 
 	for i := range config.Commands {
 		c := config.Commands[i]
-		mux.HandleFunc(c.Path, exec(c.Command))
+		mux.HandleFunc(c.Path, handler(c))
 	}
 
 	http.ListenAndServe(config.BindAddress, mux)

@@ -5,7 +5,7 @@ import (
 )
 
 var expectedBindAdress = "0.0.0.0:2350"
-var expectedCommand = "echo \"hello\""
+var expectedCommand = "echo"
 
 func TestLoadConfig(t *testing.T) {
 	conf := LoadConfig("./exampleconf.json")

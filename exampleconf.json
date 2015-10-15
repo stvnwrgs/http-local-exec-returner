@@ -3,11 +3,13 @@
   "Commands": [
     {
       "Path": "/",
-      "Command": "echo \"hello\""
+      "Command": "echo",
+      "Args": "\"Hello world\""
     },
     {
       "Path": "/welt",
-      "Command": "echo \"Hello world\" | grep 'world'"
+      "Command": "echo",
+      "Args": "\"Hello world\" | grep 'world'"
     }
   ]
 }
