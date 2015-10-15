@@ -64,3 +64,6 @@ go build && go install
 cd $GOPATH/src/github.com/stvnwrgs/locofo
 gox -output="builds/{{.OS}}/{{.Dir}}_{{.Arch}}"
 ```
+
+Or you just download the release package.
+https://github.com/stvnwrgs/locofo/releases
