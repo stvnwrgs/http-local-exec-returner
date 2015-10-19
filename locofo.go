@@ -93,8 +93,29 @@ func serveHttp(config Config) {
 		path := config.Paths[i]
 		mux.HandleFunc(path.In, requestHandler(config, path))
 	}
+	err := http.ListenAndServe(config.BindAddress, mux)
+	if err == nil {
+		log.Printf("Started Server on http:// %s", config.BindAddress)
+	} else {
+		log.Fatalf("Error starting the http service: %s", err.Error())
+	}
 
-	log.Fatalf("Error starting the http service:%s", http.ListenAndServe(config.BindAddress, mux))
+}
+
+func checkFiles(certs Certs) {
+
+	var certsAsList []string
+	certsAsList = append(certsAsList, certs.CaFile)
+	certsAsList = append(certsAsList, certs.CertFile)
+	certsAsList = append(certsAsList, certs.KeyFile)
+
+	for i := range certsAsList {
+		certFile, err := os.Open(certsAsList[i]) // certFile declared and not used
+		_ = certFile
+		if err != nil {
+			log.Fatalf("Error opening cert file %s : %s", certsAsList[i], err.Error())
+		}
+	}
 }
 
 func main() {
@@ -104,6 +125,8 @@ func main() {
 		os.Exit(2)
 	}
 	config = LoadConfig(args[1])
+	checkFiles(config.Certs)
 
 	serveHttp(config)
+
 }
