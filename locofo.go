@@ -1,16 +1,65 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
 
-func handler(command Command) func(w http.ResponseWriter, r *http.Request) {
+func buildTlsClient(certs Certs) *http.Client {
+	// Load client cert
+	cert, err := tls.LoadX509KeyPair(certs.CertFile, certs.KeyFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Load CA cert
+	caCert, err := ioutil.ReadFile(certs.CaFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	// Setup HTTPS client
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+	}
+	tlsConfig.BuildNameToCertificate()
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	client := &http.Client{Transport: transport}
+	return client
+}
+
+func request(config Config, path Config.Paths) {
+	// Load client cert
+	client := buildTlsClient(config.Certs)
+
+	// Do GET something
+	resp, err := client.Get("https://goldportugal.local:8443")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Dump response
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func requestHandler(config Config, out Path.Out) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		out, err := Execute(command.Command, command.Args)
+		out, errCode := request(config, path)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -20,12 +69,12 @@ func handler(command Command) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serve runs the Webserver
-func Serve(config Config) {
+func serveHttp(config Config) {
 	mux := http.NewServeMux()
 
-	for i := range config.Commands {
-		c := config.Commands[i]
-		mux.HandleFunc(c.Path, handler(c))
+	for i := range config.Paths {
+		path := config.Paths[i]
+		mux.HandleFunc(path.In, requestHandler(config, path.Out))
 	}
 
 	http.ListenAndServe(config.BindAddress, mux)

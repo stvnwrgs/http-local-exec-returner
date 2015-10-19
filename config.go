@@ -9,14 +9,23 @@ import (
 // Config struct
 type Config struct {
 	BindAddress string
-	Commands    []Command
+	Certs       Certs
+	Server      string
+	Paths       []Path
 }
 
-// Command with path
-type Command struct {
-	Path    string
-	Command string
-	Args    []string
+// Certs configuration
+type Certs struct {
+	CaFile   string
+	CertFile string
+	KeyFile  string
+}
+
+// Path with path
+type Path struct {
+	In              string
+	Out             string
+	ValidationRegex string
 }
 
 var config = Config{}

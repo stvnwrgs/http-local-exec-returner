@@ -1,15 +1,16 @@
 {
   "BindAddress": "0.0.0.0:2350",
-  "Commands": [
+  "Certs": {
+    "CaFile": "",
+    "CertFile": "",
+    "KeyFile": ""
+  },
+  "Server": "",
+  "Paths": [
     {
-      "Path": "/",
-      "Command": "echo",
-      "Args": ["\"Hello world\""]
-    },
-    {
-      "Path": "/welt",
-      "Command": "echo",
-      "Args": ["\"Hello world\"", "|", "grep", "'world'"]
+      "In": "",
+      "Out": "",
+      "ValidationRegex": "",
     }
   ]
 }
