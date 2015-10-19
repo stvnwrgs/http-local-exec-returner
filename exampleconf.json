@@ -4,12 +4,12 @@
     {
       "Path": "/",
       "Command": "echo",
-      "Args": "\"Hello world\""
+      "Args": ["\"Hello world\""]
     },
     {
       "Path": "/welt",
       "Command": "echo",
-      "Args": "\"Hello world\" | grep 'world'"
+      "Args": ["\"Hello world\"", "|", "grep", "'world'"]
     }
   ]
 }
