@@ -16,7 +16,7 @@ type Config struct {
 type Command struct {
 	Path    string
 	Command string
-	Args    string
+	Args    []string
 }
 
 var config = Config{}
