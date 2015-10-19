@@ -9,9 +9,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
-func buildTlsClient(certs Certs) *http.Client {
+func isValid(text string, regex string) bool {
+	match, _ := regexp.MatchString(regex, text)
+	log.Printf("Response body matching %s with %s ", regex, text)
+	log.Printf("Response body regex match result: %t ", match)
+	return match
+}
+
+func buildTLSClient(certs Certs) *http.Client {
 	// Load client cert
 	cert, err := tls.LoadX509KeyPair(certs.CertFile, certs.KeyFile)
 	if err != nil {
@@ -37,15 +45,19 @@ func buildTlsClient(certs Certs) *http.Client {
 	return client
 }
 
-func request(config Config, path Config.Paths) {
-	// Load client cert
-	client := buildTlsClient(config.Certs)
-
+func request(client *http.Client, uri string) (string, int) {
 	// Do GET something
-	resp, err := client.Get("https://goldportugal.local:8443")
+	statusCode := 200
+
+	resp, err := client.Get(uri)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if resp.StatusCode != 200 {
+		statusCode = resp.StatusCode
+	}
+
 	defer resp.Body.Close()
 
 	// Dump response
@@ -53,18 +65,23 @@ func request(config Config, path Config.Paths) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	return string(data), statusCode
 }
 
-func requestHandler(config Config, out Path.Out) func(w http.ResponseWriter, r *http.Request) {
+func requestHandler(config Config, path Path) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		out, errCode := request(config, path)
+		uri := config.Server + path.Out
+		tlsClient := buildTLSClient(config.Certs)
+		responseBody, statusCode := request(tlsClient, uri)
 
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		if statusCode == 200 {
+			log.Printf("Successfull [200] response with body : %s", responseBody)
+			if !isValid(responseBody, path.ValidationRegex) {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 		}
-		io.WriteString(w, string(out[:]))
+		io.WriteString(w, string(responseBody[:]))
 	}
 }
 
@@ -74,19 +91,19 @@ func serveHttp(config Config) {
 
 	for i := range config.Paths {
 		path := config.Paths[i]
-		mux.HandleFunc(path.In, requestHandler(config, path.Out))
+		mux.HandleFunc(path.In, requestHandler(config, path))
 	}
 
-	http.ListenAndServe(config.BindAddress, mux)
+	log.Fatalf("Error starting the http service:%s", http.ListenAndServe(config.BindAddress, mux))
 }
 
 func main() {
-
-	args := os.Args[1:]
-	if (len(args) != 1) || (args[0] == "-h") || (args[0] == "--help") {
-		fmt.Print("Usage: \n locofo <config_file>")
+	args := os.Args
+	if (len(args) <= 1) && ((args[1] == "-h") || (args[1] == "--help")) {
+		fmt.Println("Usage: \n locofo <config_file>")
+		os.Exit(2)
 	}
-	config = LoadConfig(args[0])
+	config = LoadConfig(args[1])
 
-	Serve(config)
+	serveHttp(config)
 }
